@@ -28,6 +28,16 @@ PhratchError class >> errorWithDialog: aMessage [
 ]
 
 { #category : #'error handling' }
+PhratchError class >> errorWithTitle: aTitle message: aMessage [
+	
+	DialogBoxMorph inform: aMessage title: aTitle.
+	ScriptablePhratchMorph noviceMode ifFalse:[
+		^super error: aMessage
+	]
+
+]
+
+{ #category : #'error handling' }
 PhratchError class >> primitiveFailed: aMessage [
 	
 	ScriptablePhratchMorph noviceMode ifTrue:[
