@@ -122,55 +122,55 @@ PhratchFrameMorph class >> getFont: aSymbol [
 	"Get a font for a given purpose (specified by aSymbol) based on the current font setting."
 
 	|  fonts  |
-	fonts := {#Arg				->	1.
-#Label			->	1.
-#MenuTitle		->	2.
-#Button			->	1.
-#Category		->	1.
-#Tab						->		2.
-#CommentBlock				->		1.
-#TalkBubble					->		3.
-#ToolTip						->		4.
-#ReporterToolTip				->		5.
+	fonts := {#Arg				->	0.
+#Label			->	0.
+#MenuTitle		->	0.
+#Button			->	0.
+#Category		->	0.
+#Tab						->		0.
+#CommentBlock				->		0.
+#TalkBubble					->		0.
+#ToolTip						->		0.
+#ReporterToolTip				->		0.
 #XYReadout					->		0.
 #XYReadoutBold				->		0.
-#CostumesPage				->		2.
-#SoundsPage					->		2.
-#ViewerPage				->		2.
-#UpdatingStringField			->		2.
-#Watcher					->		1.
-#WatcherLarge				->		5.
-#PaintUtilityButton			->		1.
-#PaintSetRotationCenter		->		2.
+#CostumesPage				->		0.
+#SoundsPage					->		0.
+#ViewerPage				->		0.
+#UpdatingStringField			->		0.
+#Watcher					->		0.
+#WatcherLarge				->		0.
+#PaintUtilityButton			->		0.
+#PaintSetRotationCenter		->		0.
 #LibraryItemName			->		0.
-#LibraryItemInfo			->		-3.
-#MediaItemInfo				->		-3.
-#DialogBoxTitle				->		5.
-#DialogBoxMessage			->		4.
-#DialogBoxButton			->		2.
-#ProjectNotes				->		1.
-#LinkMorphDefault			->		1.
-#ShareLink					->		4.
-#SoundRecorderButton		->		4.
-#SoundRecorderTimer		->	1.
-#StringDialogTypeIn			->		3.
-#NewVariableDialogBox		->		2.
-#AboutPhratch				->		2.
-#UploadTagLabel				->		1.
-#UploadTag					->		1.
-#UploadDialogLabel			->		1.
-#UploadDialogContents		->		1.
-#UploadDialogComment		->		1.
-#FolderShortcut				->		2.
-#FileChooserNewFileTitle		->		1.
-#FileChooserNewFilename		->		1.
-#FileChooserLabel			->		1.
-#FileChooserContents			->		3.
-#FileChooserComment			->		1.
+#LibraryItemInfo			->		0.
+#MediaItemInfo				->		0.
+#DialogBoxTitle				->		0.
+#DialogBoxMessage			->		0.
+#DialogBoxButton			->		0.
+#ProjectNotes				->		0.
+#LinkMorphDefault			->		0.
+#ShareLink					->		0.
+#SoundRecorderButton		->		0.
+#SoundRecorderTimer		->	0.
+#StringDialogTypeIn			->		0.
+#NewVariableDialogBox		->		0.
+#AboutPhratch				->		0.
+#UploadTagLabel				->		0.
+#UploadTag					->		0.
+#UploadDialogLabel			->		0.
+#UploadDialogContents		->		0.
+#UploadDialogComment		->		0.
+#FolderShortcut				->		0.
+#FileChooserNewFileTitle		->		0.
+#FileChooserNewFilename		->		0.
+#FileChooserLabel			->		0.
+#FileChooserContents			->		0.
+#FileChooserComment			->		0.
 #FilePickerDirectoryName	->		0.
-#FilePickerEntry				->		2.
-#FilePickerEntryHighlighted	->		2.
-#FrameMorphProjectTitle		->		4.
+#FilePickerEntry				->		0.
+#FilePickerEntryHighlighted	->		0.
+#FrameMorphProjectTitle		->		0.
 } asDictionary.
 
 	^ LogicalFont 
@@ -1700,7 +1700,7 @@ PhratchFrameMorph >> initialize [
 	author := ''.
 	viewMode := #normal.
 
-	PhratchInstaller selectFontForLocale.
+	"PhratchInstaller selectFontForLocale."
 	self createBasicPanes.
 	self createLogo.
 	self createMenuPanel.
@@ -2560,7 +2560,7 @@ PhratchFrameMorph >> setLanguage: aString [
 			tempJustSaved := justSaved.
 
 			PhratchTranslator setLanguage: (PhratchTranslator isoCodeForName: aString).
-			PhratchInstaller selectFontForLocale.
+			"PhratchInstaller selectFontForLocale."
 			viewerPane rebuildCategorySelectors.
 
 			self updatePanes.
@@ -3239,7 +3239,7 @@ PhratchFrameMorph >> writePhratchProject [
 			(projectDirectory / projectName) exists ifTrue:[(projectDirectory / projectName) delete].
 			[(projectDirectory / out localName) renameTo: projectName]
 				ifError: [^ self inform: 'Save failed' withDetails: 'Is the folder read-only?' localized].
-			FilePluginPrims new setMacFileNamed: (projectDirectory / projectName) fullName type: 'STpb' creator: 'PHRA']
+			"FilePluginPrims new setMacFileNamed: (projectDirectory / projectName) fullName type: 'STpb' creator: 'PHRA'"]
 		ifNotNil: [
 			projectName := ''.
 			self inform: 'Save failed' withDetails: saveError].

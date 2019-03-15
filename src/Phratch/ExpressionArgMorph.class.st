@@ -141,6 +141,7 @@ ExpressionArgMorph >> initialize [
 		doResizing: true;
 		font: (PhratchFrameMorph getFont: #Arg);
 		color: Color transparent;
+		textColor: Color black;
 		yourself.
 	self addMorph: labelMorph.
 	self numExpression: '10'.

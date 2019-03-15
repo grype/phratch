@@ -487,6 +487,7 @@ DialogBoxMorph >> message: aMessage font: aStrikeFont [
 		m := StringMorph
 			contents: (lines at: n)
 			font: aStrikeFont.
+		m color: Color black.
 		messageLineMorphs addMorphBack: m].
 
 	mainColumn addMorph: messageLineMorphs.

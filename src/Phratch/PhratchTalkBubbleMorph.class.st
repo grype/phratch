@@ -60,6 +60,7 @@ PhratchTalkBubbleMorph >> initialize [
 	pointLeft := false.
 	contentsMorph := StringMorph new
 		contents: '';
+		color: Color black;
 		font: (PhratchFrameMorph getFont: #TalkBubble);
 		yourself.
 	contentsMorph
