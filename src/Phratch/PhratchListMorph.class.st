@@ -530,6 +530,11 @@ PhratchListMorph >> inspectTarget [
 
 ]
 
+{ #category : #'list ops' }
+PhratchListMorph >> isEmpty [
+	^ cellMorphs isEmpty
+]
+
 { #category : #'byob lambdas' }
 PhratchListMorph >> isMaxNestedAt: int [
 	"kludge-alert!"

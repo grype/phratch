@@ -142,6 +142,28 @@ ScriptablePhratchMorph >> append: anObject toList: listName [
 ]
 
 { #category : #'*PhratchList' }
+ScriptablePhratchMorph >> appendAll: aCollection toList: listName [
+	"Add a new value to the selected list."
+	<phratchItem: 'add all $Array$ to $List$' kind: #- category: 'list' defaultValues: #('thing') subCategory: #a4 special: #()>
+	| list |
+	list := (listName isPhratchListMorph)
+		ifTrue: [ listName ]
+		ifFalse: [ self listNamed: listName ifNone: [ ^ 0 ] ].
+	aCollection do: [ :each | list insertLine: (self asListElement: each) at: list lineCount + 1 ].
+]
+
+{ #category : #'*PhratchList' }
+ScriptablePhratchMorph >> clearList: listName [
+	"Add a new value to the selected list."
+	<phratchItem: 'clear $List$' kind: #- category: 'list' defaultValues: #('thing') subCategory: #a4 special: #()>
+	| list |
+	list := (listName isPhratchListMorph)
+		ifTrue: [ listName ]
+		ifFalse: [ self listNamed: listName ifNone: [ ^ 0 ] ].
+	list clear
+]
+
+{ #category : #'*PhratchList' }
 ScriptablePhratchMorph >> contentsOfList: listName [
 	"Give the contents of the given list"
 	<phratchItem: '$List$' kind: #ReporterBlockMorph category: 'list' defaultValues: #('a list') subCategory: #a1 special: #()>
@@ -293,6 +315,16 @@ ScriptablePhratchMorph >> insert: anObject at: lineNum ofList: listName [
 	#last = lineNum ifTrue: [i := list lineCount + 1].
 	list insertLine: (self asListElement: anObject) at: i.
 
+
+]
+
+{ #category : #'*PhratchList' }
+ScriptablePhratchMorph >> isListEmpty: listName [
+	"Verify if the list contains the given object."
+	<phratchItem: 'Is $List$ empty?' kind: #BooleanBlockMorph category: 'list' defaultValues: #('list') subCategory: #a5 special: #()>
+	| list |
+	list := self listNamed: listName ifNone: [^ false].
+	^ list isEmpty
 
 ]
 

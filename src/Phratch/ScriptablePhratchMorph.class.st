@@ -869,6 +869,13 @@ ScriptablePhratchMorph >> changed [
 ]
 
 { #category : #'block API' }
+ScriptablePhratchMorph >> checkEmpty: anObject [
+	"Verify if the given value is empty"
+	<phratchItem: 'is $String$ empty?' kind: #BooleanBlockMorph category: 'operators' defaultValues: #() subCategory: #a9 special: #()>
+	^ anObject isEmpty
+]
+
+{ #category : #'block API' }
 ScriptablePhratchMorph >> checkNil: str [
 	"Verify if the given value is nil"
 	<phratchItem: 'is $String$ nil?' kind: #BooleanBlockMorph category: 'operators' defaultValues: #() subCategory: #a9 special: #()>
@@ -2242,6 +2249,13 @@ ScriptablePhratchMorph >> getFalse [
 	"Return the boolean False"
 	<phratchItem: 'false' kind: #BooleanBlockMorph category: 'operators' defaultValues: #() subCategory: #a4 special: #()>
 	^false
+]
+
+{ #category : #byob }
+ScriptablePhratchMorph >> getNil [
+	"Return Nil"
+	<phratchItem: 'nil' kind: #ReporterBlockMorph category: 'operators' defaultValues: #() subCategory: #a4 special: #()>
+	^nil
 ]
 
 { #category : #'byob OOP' }
