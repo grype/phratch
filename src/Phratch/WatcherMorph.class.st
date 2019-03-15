@@ -209,6 +209,12 @@ WatcherMorph >> initialize [
 
 ]
 
+{ #category : #'right button menu' }
+WatcherMorph >> inspectTarget [
+	(self selectorAndArg in: [ :args | self target perform: args first with: args second ]) inspect.
+
+]
+
 { #category : #'panther actions' }
 WatcherMorph >> isColor [
 
@@ -388,6 +394,7 @@ WatcherMorph >> rightButtonMenu [
 
 	menu addLine.
 	menu add: '  ',  'hide' localized selector: #delete.
+	menu add: '  ',  'inspect' localized selector: #inspectTarget.
 	menu invokeModal.
 
 ]

@@ -524,6 +524,12 @@ PhratchListMorph >> insertLine: aString at: aNumber [
 
 ]
 
+{ #category : #'event handling' }
+PhratchListMorph >> inspectTarget [
+	self list inspect
+
+]
+
 { #category : #'byob lambdas' }
 PhratchListMorph >> isMaxNestedAt: int [
 	"kludge-alert!"
@@ -781,6 +787,7 @@ PhratchListMorph >> rightButtonMenu [
 	menu add: 'import' localized selector: #importList.
 	menu addLine.
 	menu add: 'hide' localized selector: #delete.
+	menu add: 'inspect' localized selector: #inspectTarget.
 	menu localize.
 	menu labels
 		at: 2
