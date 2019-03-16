@@ -65,7 +65,7 @@ PhratchHelp class >> htmlDoc [
 		in: ScriptablePhratchMorph) asOrderedCollection.
 	ScriptablePhratchMorph allSubclasses
 		do: [ :aSC | allPragmas addAll: (Pragma allNamed: #phratchItem:kind:category:defaultValues:subCategory:special: in: aSC) ].
-	html := FileStream forceNewFileNamed: (dir / 'index.html') fullName.
+	html := (dir / 'index.html') writeStream.
 	html nextPutAll: '<h2>Categories</h2><ul style="list-style-type: none;">'.
 	PhratchCategory
 		allSubclassesDo: [ :c | 
@@ -139,7 +139,7 @@ PhratchHelp class >> htmlDocForWebsite [
 		in: ScriptablePhratchMorph) asOrderedCollection.
 	ScriptablePhratchMorph allSubclasses
 		do: [ :aSC | allPragmas addAll: (Pragma allNamed: #phratchItem:kind:category:defaultValues:subCategory:special: in: aSC) ].
-	html := FileStream forceNewFileNamed: (dir / 'index.html') fullName.
+	html := (dir / 'index.html') writeStream.
 	html nextPutAll: '<h2>Categories</h2><ul style="list-style-type: none;">'.
 	PhratchCategory
 		allSubclassesDo: [ :c | 

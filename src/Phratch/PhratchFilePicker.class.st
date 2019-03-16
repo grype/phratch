@@ -328,7 +328,7 @@ PhratchFilePicker >> getPhratchInfoFromFile [
 	fullName := (currentDir / self selectedFile) fullName.
 	fullName asFileReference exists
 		ifFalse: [ ^ result ].
-	[ f := (FileStream readOnlyFileNamed: fullName) binary ] ifError: [ ^ result ].
+	[ f := fullName asFileReference binaryReadStream ] ifError: [ ^ result ].
 	[ 
 	version := FuelObjStream phratchFileVersionFrom: (f next: 10) asString.
 	({1 . 2} includes: version)

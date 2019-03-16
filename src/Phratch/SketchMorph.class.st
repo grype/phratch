@@ -415,7 +415,7 @@ SketchMorph >> saveAsJPEG [
 		fileName := fileName, '.jpg'].
 
 	bytes := PluginBasedJPEGReadWriter new compress: formToSave quality: quality asNumber.
-	f := (FileStream newFileNamed: fileName) binary.
+	f := fileName asFileReference binaryWriteStream.
 	f nextPutAll: bytes; close.
 
 ]

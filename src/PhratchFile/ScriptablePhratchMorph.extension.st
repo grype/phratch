@@ -16,11 +16,8 @@ ScriptablePhratchMorph >> askForFileIO [
 ScriptablePhratchMorph >> clearFile: aFileNameString [
 	"Clear the given file."
 	<phratchItem: 'clear file $String$' kind: #- category: 'files' defaultValues: #() subCategory: #a special: #()>
-	| f |
 	(self askForFileIO = true) ifFalse: [^ self].
-	aFileNameString asFileReference delete.
-	f := FileStream newFileNamed: aFileNameString.
-	f close
+	aFileNameString asFileReference delete ensureCreateFile.
 ]
 
 { #category : #'*PhratchFile' }
@@ -28,10 +25,7 @@ ScriptablePhratchMorph >> createFile: aFileNameString [
 	"Create the given file name."
 	<phratchItem: 'create file $String$' kind: #- category: 'files' defaultValues: #() subCategory: #a special: #()>
 	(self askForFileIO = true) ifFalse: [^ self].
-	aFileNameString asFileReference ensureDelete.
-	(FileStream newFileNamed: aFileNameString) 
-		nextPutAll: '';
-		close.
+	aFileNameString asFileReference ensureDelete ensureCreateFile.
 ]
 
 { #category : #'*PhratchFile' }
@@ -49,7 +43,7 @@ ScriptablePhratchMorph >> numFileLines: aFileNameString [
 	| f data |
 	(self askForFileIO = true) ifFalse: [^ self].
 	(aFileNameString asFileReference exists) ifFalse: [^ ''].
-	f := (FileStream readOnlyFileNamed: aFileNameString) binary.
+	f := aFileNameString asFileReference binaryReadStream.
 	f ifNil: [^ ''].
 	data := f contentsOfEntireFile asString.
 	f close.
@@ -73,7 +67,7 @@ ScriptablePhratchMorph >> readFile: aFileNameString [
 	| f data |
 	(self askForFileIO = true) ifFalse: [^ self].
 	(aFileNameString asFileReference exists) ifFalse: [^ ''].
-	f := (FileStream readOnlyFileNamed: aFileNameString) binary.
+	f := aFileNameString asFileReference binaryReadStream.
 	f ifNil: [^ ''].
 	data := f contentsOfEntireFile asString.
 	f close.
@@ -101,7 +95,7 @@ ScriptablePhratchMorph >> readLine: lineNum ofFile: aFileNameString [
 	| f data |
 	(self askForFileIO = true) ifFalse: [^ self].
 	(aFileNameString asFileReference exists) ifFalse: [^ ''].
-	f := (FileStream readOnlyFileNamed: aFileNameString) binary.
+	f := aFileNameString asFileReference binaryReadStream.
 	f ifNil: [^ ''].
 	data := f contentsOfEntireFile asString.
 	f close.
@@ -115,7 +109,7 @@ ScriptablePhratchMorph >> writeText: aString toFile: aFileNameString [
 	| f |
 	(self askForFileIO = true) ifFalse: [^ self].
 	(aFileNameString asFileReference exists) ifFalse: [^ self].
-	f := (FileStream fileNamed: aFileNameString) binary.
+	f := aFileNameString asFileReference binaryWriteStream.
 	f ifNil: [^ self].
 	f setToEnd.
 	f nextPutAll: aString.

@@ -71,9 +71,9 @@ PhratchTranslator class >> extractLanguageFromFileNamed: aFilename [
 	"self extractLanguageFromFileNamed: (self translationDir fullNameFor: 'Scratch.pot')"
 
 	| f s i line lang nextLine lineSize |
-	f := FileStream readOnlyFileNamedOrNil: aFilename.
-	f ifNil: [^ nil].
-	s := f contentsOfEntireFile.
+	f := aFilename asFileReference.
+	f exists ifFalse: [^ nil].
+	s := f contents.
 	i := 0.
 	[true] whileTrue: [
 		i := s findString: 'language-name' startingAt: i + 1 caseSensitive: false.
@@ -135,11 +135,11 @@ PhratchTranslator class >> importTranslation: aFilename [
 	"self importTranslation: 'cs.po'"
 
 	| f lines lstream result |
-	f := FileStream readOnlyFileNamedOrNil: (self translationDir / aFilename)asFileReference fullName.
-	f ifNil: [
+	f := self translationDir / aFilename.
+	f exists ifFalse: [
 		DialogBoxMorph inform: 'File not found' withDetails: aFilename.
 		^ nil].
-	lines := f contentsOfEntireFile lines.
+	lines := f contents lines.
 
 	"trim blanks"
 	lines := lines collect: [:s | s withoutLeadingBlanks].

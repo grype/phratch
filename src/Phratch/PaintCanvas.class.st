@@ -803,7 +803,7 @@ PaintCanvas >> importCostumeFromSprite: fName [
 
 	| data  f importedStage |
 	(fName) exists ifFalse: [^ nil].
-	f := (FileStream readOnlyFileNamed: fName) binary.
+	f := fName asFileReference binaryReadStream.
 	f ifNil: [^ nil].
 	data := f contentsOfEntireFile.
 

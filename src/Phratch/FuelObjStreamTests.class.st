@@ -87,8 +87,7 @@ FuelObjStreamTests >> testStoreDictionary [
 	"Failing test for storing and reading dictionaries."
 	
 	| stream objstreamer d d2 |
-	stream := FileStream fileNamed: '_test.out'.
-	stream binary.
+	stream := '_test.out' asFileReference binaryWriteStream.
 	objstreamer := FuelObjStream new.
 	d := Dictionary new.
 	d at: 'score' put: 10.
@@ -96,8 +95,7 @@ FuelObjStreamTests >> testStoreDictionary [
 	stream close.
 	
 	"Now try and read back the object"
-	stream := FileStream readOnlyFileNamed: '_test.out'.
-	stream binary.
+	stream := '_test.out' asFileReference binaryReadStream.
 	objstreamer := FuelObjStream new.
 	d2 := objstreamer readObjFrom: stream.
 	stream close.
@@ -137,7 +135,7 @@ FuelObjStreamTests >> writeTestFile [
 	all add: ImageMorph defaultForm.
 
 	objects := (Array with: nil), all asArray.
-	s := (FileStream newFileNamed: 'test.obj') binary.
+	s := 'test.obj' asFileReference binaryWriteStream.
 	FuelObjStream new storeObj: objects on: s.
 	s close.
 

@@ -114,7 +114,7 @@ PhratchInstaller class >> getPhratchHelp [
 { #category : #installation }
 PhratchInstaller class >> getPhratchLicence [
 	UIManager inform:  'Downloading licence.txt'.
-	(FileStream newFileNamed: 'license.txt') nextPutAll: ((ZnClient new get: 'https://github.com/janniklaval/phratch/raw/master/license.txt'))
+	'license.txt' asFileReference writeStream nextPutAll: ((ZnClient new get: 'https://github.com/janniklaval/phratch/raw/master/license.txt'))
 ]
 
 { #category : #installation }

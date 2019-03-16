@@ -1619,7 +1619,7 @@ PhratchFrameMorph >> importSpriteOrProject: fileNameOrData [
 	data := fileNameOrData.
 	(data isKindOf: FileReference) ifTrue: [  "read the contents of a local file"
 		fileNameOrData exists ifFalse: [^ self].
-		f := (FileStream readOnlyFileNamed: fileNameOrData) binary.
+		f := fileNameOrData asFileReference binaryReadStream.
 		f ifNil: [^ self].
 		data := f contentsOfEntireFile].
 
@@ -2073,17 +2073,14 @@ PhratchFrameMorph >> openPhratchProject [
 PhratchFrameMorph >> openPhratchProjectNamed: fName [
 	"Open a Phratch project with the given name."
 
-	| f projData newProj dir fn|
+	| projData newProj dir fn|
 	self closeMediaEditorsAndDialogs ifFalse: [^ self].
-	fn := fName.
-	f := FileStream readOnlyFileNamedOrNil: fn.
- 	f ifNil: ["try a different encoding, fixes a Firefox bug, -Jens"
-		fn := fName fullName.
-		f := FileStream readOnlyFileNamedOrNil: fn.
-		f ifNil: [^ self inform: 'Could not read' withDetails: fName]].
+	fn := fName asFileReference.
+	fn exists ifFalse: [ fn := fName fullName ].
+	fn exists ifFalse: [ ^ self inform: 'File not found' withDetails: fName ].
 
 	"["
-		projData := f binary contentsOfEntireFile.
+		projData := fn binaryReadStream contents.
 		newProj := self extractProjectFrom: projData.
 		projectInfo := self extractInfoFrom: projData.
 	"] ifError: [:err :rcvr | ^ self inform: 'Could not read project; file may be damaged' withDetails: '(', err, ')']."
@@ -2103,18 +2100,15 @@ PhratchFrameMorph >> openPhratchProjectNamed: fName [
 PhratchFrameMorph >> openSilentlyPhratchProjectNamed: fName [
 	"Open a Phratch project with the given name."
 
-	| f projData newProj dir fn|
+	| projData newProj dir fn|
 	"self closeMediaEditorsAndDialogs ifFalse: [^ self]."
-	fn := fName.
-	f := FileStream readOnlyFileNamedOrNil: fn.
- 	f ifNil: ["try a different encoding, fixes a Firefox bug, -Jens"
-		fn := fName fullName.
-		f := FileStream readOnlyFileNamedOrNil: fn.
-		f ifNil: [^ self" inform: 'Could not read' withDetails: fName"]].
+	fn := fName asFileReference.
+	fn exists ifFalse: [ fn := fName fullName ].
+	fn exists ifFalse: [ ^ self inform: 'File does not exist' withDetails: fName ].
 
 	"["
-		projData := f binary contentsOfEntireFile.
-		newProj := self extractProjectFrom: projData.
+		projData := fn contents.
+		newProj := self extractProjectFromByteArray: projData.
 		projectInfo := self extractInfoFrom: projData.
 	"] ifError: [:err :rcvr | ^ self inform: 'Could not read project; file may be damaged' withDetails: '(', err, ')']."
 
@@ -2509,7 +2503,7 @@ PhratchFrameMorph >> setDefaultSprite [
 	"if dfault.ysp exists, use that"
 	d := PhratchFileChooserDialog getDefaultFolderForType: #costume.
 	(d / 'default.sprite') exists ifTrue: [
-		f := (FileStream readOnlyFileNamed: (d / 'default.sprite') fullName) binary.
+		f := (d / 'default.sprite') fullName asFileReference binaryReadStream.
 		f ifNotNil: [
 			data := f contentsOfEntireFile.
 			importedProject := [self extractProjectFrom: data] ifError: [nil].
@@ -3170,60 +3164,63 @@ PhratchFrameMorph >> writeMultipleSummaries [
 PhratchFrameMorph >> writePhratchProject [
 	"Write this Phratch project to the file named projectFile in the project directory. Called by savePhratchProject."
 
-	|     saveError out |
-	workPane submorphsDo: [:m |
-		(m isWatcherMorph) ifTrue: [m delete]].
-	
+	| saveError out tmpFile |
+	workPane
+		submorphsDo: [ :m | 
+			m isWatcherMorph
+				ifTrue: [ m delete ] ].
 	self stopAll.
-	self world ifNotNil: [self world activeHand newKeyboardFocus: nil].  "terminates active editor"
+	self world ifNotNil: [ self world activeHand newKeyboardFocus: nil ].	"terminates active editor"
 
 	"share duplicate sounds and images"
 	self canonicalizeSoundsBits: nil saveOriginal: false.
 	self canonicalizeImagesQuality: nil saveOriginal: false.
 
-"	oldScriptsTarget := scriptsPane target.
+	"	oldScriptsTarget := scriptsPane target.
 	oldTab := scriptsPane tabPane currentTab.
 	oldViewerCategory := viewerPane currentCategory.
 	scriptsPane target: nil."
-
 	workPane updateSpritesList.
-"	oldPosition := workPane position.
+	"	oldPosition := workPane position.
 	workPane delete; position: 0@0.
-"	self updatePenPositions.
-
-
-	'saving...' 
-		displayProgressAt: self center - (32@5)  "Sensor cursorPoint"
-		from: 0 to: ((workPane allMorphs) select: [:m| m isScriptablePhratchMorph]) size * 2
-		during: [:bar | | i | i := 0.
-
-	workPane allMorphsDo: [:m |
-		(m isScriptablePhratchMorph) ifTrue: [
-			i := i + 1. bar value: i.
-			(m isPhratchSpriteMorph)
-				ifTrue: [m cacheRefPos].
-			(m blocksBin isPhratchSpriteMorph) ifTrue: [  m blocksBin allMorphsDo: [:b |
-				(b isBlockMorph) ifTrue: [b stop]]].
-			]].
-
-	saveError := nil.
-	[ 
-		out := FileStream newFileNamed: (self unusedNameStartingWith: 'tmp').
-		out
-			ifNil: [saveError := 'Folder may be locked or read-only']
-			ifNotNil: [
-				out binary.
-				out nextPutAll: 'PhratchV01' asByteArray. "changed the internal version marker for the prototype -Jens"
-				self storeProjectInfoOn: out.
-				FuelObjStream new storeObj: workPane on: out.
-				out close].
-	] ifError: [:err :rcvr |
-		out ifNotNil: [
-			[	out close.
-				projectDirectory deleteFileNamed: out localName.
-			] ifError: []]. 
-		saveError := err].
-].
+"
+	self updatePenPositions.
+	'saving...'
+		displayProgressAt: self center - (32 @ 5)
+		from: 0
+		to:
+			(workPane allMorphs select: [ :m | m isScriptablePhratchMorph ]) size
+				* 2
+		during: [ :bar | 
+			| i |
+			i := 0.
+			workPane
+				allMorphsDo: [ :m | 
+					m isScriptablePhratchMorph
+						ifTrue: [ i := i + 1.
+							bar value: i.
+							m isPhratchSpriteMorph
+								ifTrue: [ m cacheRefPos ].
+							m blocksBin isPhratchSpriteMorph
+								ifTrue: [ m blocksBin
+										allMorphsDo: [ :b | 
+											b isBlockMorph
+												ifTrue: [ b stop ] ] ] ] ].
+			saveError := nil.
+			tmpFile := (self unusedNameStartingWith: 'tmp') asFileReference.
+			[ out := tmpFile binaryWriteStream.
+			out
+				ifNil: [ saveError := 'Folder may be locked or read-only' ]
+				ifNotNil: [
+					out nextPutAll: 'PhratchV01' asByteArray.	"changed the internal version marker for the prototype -Jens"
+					self storeProjectInfoOn: out.
+					FuelObjStream new storeObj: workPane on: out.
+					out close ] ]
+				ifError: [ :err :rcvr | 
+					out
+						ifNotNil: [ [ out close.
+							projectDirectory deleteFileNamed: out localName ] ifError: [  ] ].
+					saveError := err ] ].	"Sensor cursorPoint"
 
 	"self addMorph: (workPane position: oldPosition).
 	oldScriptsTarget ifNil: [oldScriptsTarget := workPane].
@@ -3231,20 +3228,18 @@ PhratchFrameMorph >> writePhratchProject [
 	scriptsPane tabPane currentTab: oldTab.
 	viewerPane currentCategory: oldViewerCategory."
 	self updatePenPositions.
-
 	saveError
-		ifNil: [
-			justSaved := true.
+		ifNil: [ justSaved := true.
 			self updateProjectName.
-			(projectDirectory / projectName) exists ifTrue:[(projectDirectory / projectName) delete].
-			[(projectDirectory / out localName) renameTo: projectName]
-				ifError: [^ self inform: 'Save failed' withDetails: 'Is the folder read-only?' localized].
-			"FilePluginPrims new setMacFileNamed: (projectDirectory / projectName) fullName type: 'STpb' creator: 'PHRA'"]
-		ifNotNil: [
-			projectName := ''.
-			self inform: 'Save failed' withDetails: saveError].
-		
-
+			(projectDirectory / projectName) exists
+				ifTrue: [ (projectDirectory / projectName) delete ].
+			[ projectDirectory / tmpFile basename renameTo: projectName ]
+				ifError: [ ^ self
+						inform: 'Save failed'
+						withDetails: 'Is the folder read-only?' localized ]
+			"FilePluginPrims new setMacFileNamed: (projectDirectory / projectName) fullName type: 'STpb' creator: 'PHRA'" ]
+		ifNotNil: [ projectName := ''.
+			self inform: 'Save failed' withDetails: saveError ]
 ]
 
 { #category : #'menu/button actions' }

@@ -37,7 +37,7 @@ PhratchFilePickerImageEntry >> computeThumbnail [
 	thumbnailForm ifNotNil: [^ self].
 
 	[	fName := (directory / entryName) fullName.
-		fContents := (FileStream readOnlyFileNamed: fName) binary contentsOfEntireFile.
+		fContents := fName asFileReference contents.
 		f := Form fromBinaryStream: (ReadStream on: fContents)
 	] ifError: [ PhratchError error:'Could not read Form'.^ self].
 

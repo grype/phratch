@@ -432,14 +432,14 @@ PhratchListMorph >> importList [
 PhratchListMorph >> importListFromFileNamed: aFilename [
 
 	| f |
-	f := FileStream readOnlyFileNamedOrNil: (( aFilename) fullName).
-	f ifNil: [
+	f := aFilename asFileReference.
+	f exists ifFalse: [
 		DialogBoxMorph inform: 'File not found' withDetails: aFilename.
 		^ nil].
 
 	"Assume the file was encoded as UTF8"
 	[	self newContents:
-			(f contentsOfEntireFile lines collect: [:s | String withAll: s]).
+			(f contents lines collect: [:s | String withAll: s]).
 	] ifError: [PhratchError error].
 
 ]

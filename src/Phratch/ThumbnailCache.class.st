@@ -101,7 +101,7 @@ ThumbnailCache >> updateThumbnails [
 					bar value: n.
 					thumb := nil.
 					[ 
-					buf := (FileStream readOnlyFileNamed: (directory / fn) fullName) binary contentsOfEntireFile.
+					buf := (directory / fn)  contents.
 					self flag: 'cannot load sprite for now'.
 					thumb := (fn asLowercase endsWith: '.sprite') | (fn asLowercase endsWith: '.ysp')
 						| (fn asLowercase endsWith: '.phsp')
