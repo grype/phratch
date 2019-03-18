@@ -2123,15 +2123,15 @@ ScriptablePhratchMorph >> exportObject [
 		(dir / fName) delete].
 
 	f := nil.
-	[	f := (StandardFileStream newFileNamed: (dir / fName)) binary.
+	[	f := (dir / fName) binaryWriteStream.
 		objToExport := self copyForExport.
 		objToExport objName: fName.
 
 		objToExport firstSubmorph allSubsprites do: [:eachSub |
 			eachSub owner ifNil: [objToExport addMorphBack: eachSub ]].
-		FuelObjStream new storeObj: objToExport on: f showProgress: false.
+		FuelObjStream new writeFileHeaderOn: f; storeObj: objToExport on: f showProgress: false.
 		f close.
-		FilePluginPrims new setMacFileNamed: (dir / fName) fullName type: 'phsp' creator: 'PHRA'.
+		"FilePluginPrims new setMacFileNamed: (dir / fName) fullName type: 'phsp' creator: 'PHRA'".
 
 	] ifError: [
 		f ifNotNil: [f close].

@@ -37,9 +37,12 @@ FuelObjStreamTests >> serializeAndDeserialize: anObject [
 
 	| stream |
 	stream := WriteStream on: ByteArray new.
-	FuelObjStream new storeObj: anObject on: stream showProgress: false.
-	^ FuelObjStream new readObjFrom: (ReadStream on: stream contents)
-
+	FuelObjStream new
+		writeFileHeaderOn: stream;
+		storeObj: anObject on: stream showProgress: false.
+	^ FuelObjStream new
+		readFileHeader: stream;
+		readObjFrom: (ReadStream on: stream contents)
 ]
 
 { #category : #tests }

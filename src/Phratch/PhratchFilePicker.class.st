@@ -322,24 +322,16 @@ PhratchFilePicker >> getLocalDirectoryNames [
 PhratchFilePicker >> getPhratchInfoFromFile [
 	"Answer the project info dictionary for the currently selected file. Answer the empty dictionary if no file is selected or if the file does not include a project info dictionary (e.g. if it is in an older Phratch file format)."
 
-	| result fullName f version buf |
+	| result file proj |
 	result := Dictionary new.
 	self selectedFile ifNil: [ ^ result ].
-	fullName := (currentDir / self selectedFile) fullName.
-	fullName asFileReference exists
+	file := currentDir / self selectedFile.
+	file exists
 		ifFalse: [ ^ result ].
-	[ f := fullName asFileReference binaryReadStream ] ifError: [ ^ result ].
-	[ 
-	version := FuelObjStream phratchFileVersionFrom: (f next: 10) asString.
-	({1 . 2} includes: version)
-		ifTrue: [ 
-			buf := f next: f uint32.
-			result := FuelObjStream new readObjFrom: (ReadStream on: buf)
-		 ] ]
+	[ proj := PhratchStoredProject infoFromFile: file ]
 		ifError: [ :e | 
-			ScriptablePhratchMorph noviceMode ifFalse:[e signal].
-		].
-	f close.
+			ScriptablePhratchMorph noviceMode
+				ifFalse: [ Error signal: e ] ].
 	^ result
 ]
 

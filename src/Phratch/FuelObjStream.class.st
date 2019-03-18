@@ -42,10 +42,7 @@ FuelObjStream >> readObjFrom: aStream [
 FuelObjStream >> readObjFrom: aStream showProgress: showProgress [
 	"Read the root object from the given binary stream. If showProgress is true, display a progress bar."
 
-	self readFileHeader: aStream.
-	objects := "showProgress
-		ifTrue: [ (FLMaterializer newDefault materializeFrom: aStream) root	 showProgress; ]
-		ifFalse: [ "(FLMaterializer newDefault materializeFrom: aStream) root "]".
+	objects := (FLMaterializer newDefault materializeFrom: aStream) root.
 	^ objects
 ]
 
@@ -57,7 +54,6 @@ FuelObjStream >> readSpriteFrom: aStream showProgress: showProgress [
 	objects := OrderedCollection new.
 	"stream := FLMaterializer newDefault materializeFrom: aStream."
 	stream := aStream.
-	self readFileHeader: aStream.
 	objCount := stream uint32.
 	showProgress
 		ifTrue: [
@@ -94,7 +90,6 @@ FuelObjStream >> storeObj: anObject on: aStream [
 FuelObjStream >> storeObj: anObject on: aStream showProgress: showProgress [
 	"Write the given object and all the objects that can be reached from it on the given binary stream. If showProgress is true, display a progress bar."
 
-	self writeFileHeaderOn: aStream.
 	objects := showProgress
 		ifTrue: [ 
 			FLSerializer newDefault

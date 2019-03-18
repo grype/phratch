@@ -1283,71 +1283,39 @@ PhratchFrameMorph >> extractInfoFrom: aByteArray [
 ]
 
 { #category : #'file read/write' }
-PhratchFrameMorph >> extractPhratchProjectFrom: aByteArray [
-	"Answer a Phratch project (i.e. a PhratchStageMorph possibly containing sprites) from the given ByteArray. Answer nil if the project cannot be unpacked.
-
-Note: this is a compatibility force method"
-
-	| s version proj |
-
-	FuelObjStream initialize. "just to make sure this works in filed-in changesets, -Jens"
-
-	s := ReadStream on: aByteArray.
-	version := FuelObjStream phratchFileVersionFrom: (s next: 10) asString.
-	version = 0 ifTrue: [
-		s position: 0.
-		proj := FuelObjStream new readObjFrom: s showProgress: true].
-	({1 . 2} includes: version) ifTrue: [
-		s skip: s uint32.  "skip header"
-		proj := FuelObjStream new readObjFrom: s showProgress: true].
-
-	proj class = PhratchStageMorph ifFalse: [
-		version > 2
-			ifTrue: [self error: 'Project created by a later version of Scratch']
-			ifFalse: [self error: 'Problem reading project.'].
-		^ nil].
-
-	'initializing...' 
-		displayProgressAt: self center - (32@5)  "Sensor cursorPoint"
-		from: 0 to: ((proj allMorphs) select: [:m| m isScriptablePhratchMorph]) size * 2
-		during: [:bar | | i | i := 0.
-].
-
-	^ proj
-
+PhratchFrameMorph >> extractProjectFromByteArray: aByteArray [
+	^ self extractProjectFromStream: (ReadStream on: aByteArray)
 ]
 
 { #category : #'file read/write' }
-PhratchFrameMorph >> extractProjectFrom: aByteArray [
-	"Answer a Phratch project (i.e. a PhratchStageMorph possibly containing sprites) from the given ByteArray. Answer nil if the project cannot be unpacked."
+PhratchFrameMorph >> extractProjectFromFile: aFile [
+	^ FLPlatform current
+		fileNamed: aFile asFileReference fullName
+		readStreamDo: [ :aFileStream | ^ self extractProjectFromStream: aFileStream ]
+]
 
-	| s version proj |
+{ #category : #'file read/write' }
+PhratchFrameMorph >> extractProjectFromStream: aStream [
+	"Answer a Phratch project (i.e. a PhratchStageMorph possibly containing sprites) from the given stream. Answer nil if the project cannot be unpacked."
 
-	FuelObjStream initialize. "just to make sure this works in filed-in changesets, -Jens"
-	s := ReadStream on: aByteArray.
-	version := FuelObjStream phratchFileVersionFrom: (s next: 10) asString.
-	version = 0 ifTrue: [
-		s position: 0.
-		[proj := FuelObjStream new readObjFrom: s showProgress: true] ifError: [
-		^ self extractPhratchProjectFrom: aByteArray]].
-	({1 . 2} includes: version) ifTrue: [
-		s skip: s uint32.  "skip header"
-		proj := FuelObjStream new readObjFrom: s showProgress: true].
+	| proj |
+	proj := PhratchStoredProject fromStream: aStream.
+	proj morph
+		ifNil: [ proj version > 2
+				ifTrue: [ self error: 'Project created by a later version of Phratch' ]
+				ifFalse: [ self error: 'Problem reading project.' ].
+			^ nil ].
+	projectInfo := proj info.
 
-	proj class = PhratchStageMorph ifFalse: [
-		version > 2
-			ifTrue: [self error: 'Project created by a later version of Phratch']
-			ifFalse: [self error: 'Problem reading project.'].
-		^ nil].
-
-	'initializing...' 
-		displayProgressAt: self center - (32@5)  "Sensor cursorPoint"
-		from: 0 to: ((proj allMorphs) select: [:m| m isScriptablePhratchMorph]) size * 2
-		during: [:bar | | i | i := 0.
-].
+	UIManager default
+		displayProgress: 'initializing...'
+		from: 0
+		to: (proj morph allMorphs select: [ :m | m isScriptablePhratchMorph ]) size * 2
+		during: [ :bar | 
+			| i |
+			i := 0 ].
 
 	^ proj
-
 ]
 
 { #category : #'menu/button actions' }
@@ -1623,7 +1591,7 @@ PhratchFrameMorph >> importSpriteOrProject: fileNameOrData [
 		f ifNil: [^ self].
 		data := f contentsOfEntireFile].
 
-	[importedStage := self extractProjectFrom: data] ifError: [^ self].
+	[importedStage := self extractProjectFromByteArray: data] ifError: [^ self].
 
 	"fix references to old stage"
 	importedStage allMorphsDo: [:m |
@@ -2064,7 +2032,7 @@ PhratchFrameMorph >> openPhratchProject [
 	(response isKindOf: ByteArray)
 		ifFalse: [ ^ self ].
 	[ projectInfo := self extractInfoFrom: response ] ifError: [ projectInfo := Dictionary new ].
-	[ newProj := self extractProjectFrom: response ] ifError: [ ^ self ].
+	[ newProj := self extractProjectFromByteArray: response ] ifError: [ ^ self ].
 	self installNewProject: newProj.
 	projectDirectory := PhratchFileChooserDialog getDefaultFolderForType: #project
 ]
@@ -2073,27 +2041,33 @@ PhratchFrameMorph >> openPhratchProject [
 PhratchFrameMorph >> openPhratchProjectNamed: fName [
 	"Open a Phratch project with the given name."
 
-	| projData newProj dir fn|
-	self closeMediaEditorsAndDialogs ifFalse: [^ self].
+	| newProj dir fn |
+	self closeMediaEditorsAndDialogs
+		ifFalse: [ ^ self ].
 	fn := fName asFileReference.
-	fn exists ifFalse: [ fn := fName fullName ].
-	fn exists ifFalse: [ ^ self inform: 'File not found' withDetails: fName ].
+	fn exists
+		ifFalse: [ fn := fName fullName ].
+	fn exists
+		ifFalse: [ ^ self inform: 'File not found' withDetails: fName ].
 
-	"["
-		projData := fn binaryReadStream contents.
-		newProj := self extractProjectFrom: projData.
-		projectInfo := self extractInfoFrom: projData.
-	"] ifError: [:err :rcvr | ^ self inform: 'Could not read project; file may be damaged' withDetails: '(', err, ')']."
+	[ newProj := self extractProjectFromFile: fn.
+	newProj morph
+		ifNil: [ Error signal: 'Stage morph not found in file' ] ]
+		ifError: [ :err :rcvr | 
+			^ self
+				inform: 'Could not read project; file may be damaged'
+				withDetails: '(' , err , ')' ].
 
-	dir := (fn) parent.
+	dir := fn parent.
 	projectDirectory := dir.
-	PhratchFileChooserDialog setLastFolderTo: projectDirectory forType: #project.
-	projectName := ( fn) basename.
+	PhratchFileChooserDialog
+		setLastFolderTo: projectDirectory
+		forType: #project.
+	projectName := fn basename.
 
-	self installNewProject: newProj.
+	self installNewProject: newProj morph.
 	self initializeWatcherPositions.
-	viewerPane updateContents.
-
+	viewerPane updateContents
 ]
 
 { #category : #'falta adaptar' }
@@ -2107,7 +2081,7 @@ PhratchFrameMorph >> openSilentlyPhratchProjectNamed: fName [
 	fn exists ifFalse: [ ^ self inform: 'File does not exist' withDetails: fName ].
 
 	"["
-		projData := fn contents.
+		projData := fn binaryReadStream contents.
 		newProj := self extractProjectFromByteArray: projData.
 		projectInfo := self extractInfoFrom: projData.
 	"] ifError: [:err :rcvr | ^ self inform: 'Could not read project; file may be damaged' withDetails: '(', err, ')']."
@@ -2176,6 +2150,22 @@ PhratchFrameMorph >> phratchWatchers [
 
 	^ self workPane submorphs select: [:m | m isWatcherMorph]
 
+]
+
+{ #category : #'file read/write' }
+PhratchFrameMorph >> prepareToWritePhratchProject [
+	workPane
+		submorphsDo: [ :m | 
+			m isWatcherMorph
+				ifTrue: [ m delete ] ].
+	self stopAll.
+	self world ifNotNil: [ self world activeHand newKeyboardFocus: nil ].	"terminates active editor"
+
+	"share duplicate sounds and images"
+	self canonicalizeSoundsBits: nil saveOriginal: false.
+	self canonicalizeImagesQuality: nil saveOriginal: false.
+	workPane updateSpritesList.
+	self updatePenPositions
 ]
 
 { #category : #'falta adaptar' }
@@ -2506,7 +2496,7 @@ PhratchFrameMorph >> setDefaultSprite [
 		f := (d / 'default.sprite') fullName asFileReference binaryReadStream.
 		f ifNotNil: [
 			data := f contentsOfEntireFile.
-			importedProject := [self extractProjectFrom: data] ifError: [nil].
+			importedProject := [self extractProjectFromByteArray: data] ifError: [nil].
 			importedProject ifNil: [^ self].
 			
 			"add imported global custom block definitions"
@@ -2725,18 +2715,17 @@ PhratchFrameMorph >> stopAll [
 
 { #category : #'file read/write' }
 PhratchFrameMorph >> storeProjectInfoOn: aBinaryStream [
-
 	| s |
 	projectInfo at: 'thumbnail' put: workPane thumbnailForm.
 	projectInfo at: 'keepOnStage' put: ScriptablePhratchMorph keepOnStage.
 
 	s := WriteStream on: (ByteArray new: 100000).
-	FuelObjStream new storeObj: projectInfo on: s.
+	FuelObjStream new
+		writeFileHeaderOn: s;
+		storeObj: projectInfo on: s.
 
 	aBinaryStream uint32: s size.
-	aBinaryStream nextPutAll: s contents.
-
-
+	aBinaryStream nextPutAll: s contents
 ]
 
 { #category : #'menu/button actions' }
@@ -3164,82 +3153,58 @@ PhratchFrameMorph >> writeMultipleSummaries [
 PhratchFrameMorph >> writePhratchProject [
 	"Write this Phratch project to the file named projectFile in the project directory. Called by savePhratchProject."
 
-	| saveError out tmpFile |
-	workPane
-		submorphsDo: [ :m | 
-			m isWatcherMorph
-				ifTrue: [ m delete ] ].
-	self stopAll.
-	self world ifNotNil: [ self world activeHand newKeyboardFocus: nil ].	"terminates active editor"
+	| tmpFile |
+	self prepareToWritePhratchProject.
+	tmpFile := (self unusedNameStartingWith: 'tmp') asFileReference.
+	[ self writeProjectFileWithProgress: tmpFile.
+	justSaved := true.
+	self updateProjectName.
+	(projectDirectory / projectName) exists
+		ifTrue: [ (projectDirectory / projectName) delete ].
+	projectDirectory / tmpFile basename renameTo: projectName ]
+		on: Error
+		do: [ :err | 
+			projectName := ''.
+			self inform: 'Save failed' withDetails: err ].
+	self updatePenPositions
+]
 
-	"share duplicate sounds and images"
-	self canonicalizeSoundsBits: nil saveOriginal: false.
-	self canonicalizeImagesQuality: nil saveOriginal: false.
+{ #category : #'file read/write' }
+PhratchFrameMorph >> writeProjectFile: aFile [
+	PhratchStoredProject new
+		info:
+			(projectInfo copy
+				at: 'thumbnail' put: workPane thumbnailForm;
+				at: 'keepOnStage' put: ScriptablePhratchMorph keepOnStage;
+				yourself);
+		morph: workPane;
+		writeToFile: aFile
+]
 
-	"	oldScriptsTarget := scriptsPane target.
-	oldTab := scriptsPane tabPane currentTab.
-	oldViewerCategory := viewerPane currentCategory.
-	scriptsPane target: nil."
-	workPane updateSpritesList.
-	"	oldPosition := workPane position.
-	workPane delete; position: 0@0.
-"
-	self updatePenPositions.
-	'saving...'
-		displayProgressAt: self center - (32 @ 5)
+{ #category : #'file read/write' }
+PhratchFrameMorph >> writeProjectFileWithProgress: aFile [
+	| scriptableMorphs |
+	scriptableMorphs := workPane allMorphs
+		select: [ :m | m isScriptablePhratchMorph ].
+	UIManager default 
+		displayProgress: 'saving...'
 		from: 0
-		to:
-			(workPane allMorphs select: [ :m | m isScriptablePhratchMorph ]) size
-				* 2
+		to: scriptableMorphs size * 2
 		during: [ :bar | 
 			| i |
 			i := 0.
-			workPane
-				allMorphsDo: [ :m | 
-					m isScriptablePhratchMorph
-						ifTrue: [ i := i + 1.
-							bar value: i.
-							m isPhratchSpriteMorph
-								ifTrue: [ m cacheRefPos ].
-							m blocksBin isPhratchSpriteMorph
-								ifTrue: [ m blocksBin
-										allMorphsDo: [ :b | 
-											b isBlockMorph
-												ifTrue: [ b stop ] ] ] ] ].
-			saveError := nil.
-			tmpFile := (self unusedNameStartingWith: 'tmp') asFileReference.
-			[ out := tmpFile binaryWriteStream.
-			out
-				ifNil: [ saveError := 'Folder may be locked or read-only' ]
-				ifNotNil: [
-					out nextPutAll: 'PhratchV01' asByteArray.	"changed the internal version marker for the prototype -Jens"
-					self storeProjectInfoOn: out.
-					FuelObjStream new storeObj: workPane on: out.
-					out close ] ]
-				ifError: [ :err :rcvr | 
-					out
-						ifNotNil: [ [ out close.
-							projectDirectory deleteFileNamed: out localName ] ifError: [  ] ].
-					saveError := err ] ].	"Sensor cursorPoint"
-
-	"self addMorph: (workPane position: oldPosition).
-	oldScriptsTarget ifNil: [oldScriptsTarget := workPane].
-	oldScriptsTarget viewBlocksAndScripts.
-	scriptsPane tabPane currentTab: oldTab.
-	viewerPane currentCategory: oldViewerCategory."
-	self updatePenPositions.
-	saveError
-		ifNil: [ justSaved := true.
-			self updateProjectName.
-			(projectDirectory / projectName) exists
-				ifTrue: [ (projectDirectory / projectName) delete ].
-			[ projectDirectory / tmpFile basename renameTo: projectName ]
-				ifError: [ ^ self
-						inform: 'Save failed'
-						withDetails: 'Is the folder read-only?' localized ]
-			"FilePluginPrims new setMacFileNamed: (projectDirectory / projectName) fullName type: 'STpb' creator: 'PHRA'" ]
-		ifNotNil: [ projectName := ''.
-			self inform: 'Save failed' withDetails: saveError ]
+			scriptableMorphs
+				do: [ :m | 
+					i := i + 1.
+					bar value: i.
+					m isPhratchSpriteMorph
+						ifTrue: [ m cacheRefPos ].
+					m blocksBin isPhratchSpriteMorph
+						ifTrue: [ m blocksBin
+								allMorphsDo: [ :b | 
+									b isBlockMorph
+										ifTrue: [ b stop ] ] ] ].
+			self writeProjectFile: aFile ]
 ]
 
 { #category : #'menu/button actions' }

@@ -691,7 +691,7 @@ PaintCanvas >> eraseAll [
 ]
 
 { #category : #private }
-PaintCanvas >> extractProjectFrom: aByteArray [
+PaintCanvas >> extractProjectFromByteArray: aByteArray [
 	"Answer a Phratch project (i.e. a PhratchStageMorph possibly containing sprites) from the given ByteArray. Answer nil if the project cannot be unpacked."
 
 	| s version proj |
@@ -807,7 +807,7 @@ PaintCanvas >> importCostumeFromSprite: fName [
 	f ifNil: [^ nil].
 	data := f contentsOfEntireFile.
 
-	[importedStage := self extractProjectFrom: data] ifError: [^ nil].
+	[importedStage := self extractProjectFromByteArray: data] ifError: [^ nil].
 
 	importedStage submorphs do: [:m |
 		(m isPhratchSpriteMorph) ifTrue: [
